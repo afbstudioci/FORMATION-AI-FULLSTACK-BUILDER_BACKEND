@@ -18,7 +18,7 @@ connectDB();
 
 const app = express();
 
-// Middleware de securite et utilitaires
+// Middleware de sécurité et utilitaires
 app.use(helmet());
 app.use(cors({
   origin: true,
@@ -69,8 +69,15 @@ const io = new Server(server, {
 app.set('socketio', io);
 
 io.on('connection', (socket) => {
-  console.log('Client connecte:', socket.id);
-  socket.on('disconnect', () => console.log('Client deconnecte'));
+  console.log('Client connecté:', socket.id);
+
+  // Permet aux administrateurs de rejoindre une salle spécifique pour leurs notifications
+  socket.on('join_admin', () => {
+    socket.join('admin_room');
+    console.log('Un administrateur a rejoint la salle de contrôle:', socket.id);
+  });
+
+  socket.on('disconnect', () => console.log('Client déconnecté'));
 });
 
 const PORT = process.env.PORT || 5000;

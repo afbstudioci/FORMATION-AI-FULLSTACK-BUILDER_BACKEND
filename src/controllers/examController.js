@@ -3,7 +3,7 @@ const Exam = require('../models/Exam');
 const Submission = require('../models/Submission');
 const mongoose = require('mongoose');
 
-// Creer un examen - POST /api/exams
+// Créer un examen - POST /api/exams
 const createExam = asyncHandler(async (req, res) => {
   const { title, description, startTime, endTime, questions, pointsPerQuestion } = req.body;
 
@@ -24,23 +24,25 @@ const createExam = asyncHandler(async (req, res) => {
 
   res.status(201).json(exam);
 
-  // Notification temps réel aux étudiants
+  // Notification temps réel globale
   const io = req.app.get('socketio');
-  if (io) io.emit('new_exam', exam);
+  if (io) {
+    io.emit('examCreated', exam);
+  }
 });
 
-// Recuperer tous les examens - GET /api/exams
+// Récupérer tous les examens - GET /api/exams
 const getExams = asyncHandler(async (req, res) => {
   const exams = await Exam.find({}).select('-questions.correctAnswer').lean();
-  
+
   // Si c'est un étudiant, on marque ceux qu'il a déjà passés
   if (req.user && req.user.role === 'student') {
     const userId = new mongoose.Types.ObjectId(req.user._id);
     const userSubmissions = await Submission.find({ user: userId }).select('exam');
     console.log(`Recherche soumissions pour ${req.user.fullname} (${userId}) : ${userSubmissions.length} trouvées`);
-    
+
     const submittedExamIds = new Set(userSubmissions.map(s => s.exam.toString()));
-    
+
     exams.forEach(exam => {
       exam.hasSubmitted = submittedExamIds.has(exam._id.toString());
     });
@@ -50,11 +52,11 @@ const getExams = asyncHandler(async (req, res) => {
       exam.hasSubmitted = false;
     });
   }
-  
+
   res.json(exams);
 });
 
-// Recuperer un examen specifique - GET /api/exams/:id
+// Récupérer un examen spécifique - GET /api/exams/:id
 const getExamById = asyncHandler(async (req, res) => {
   const exam = await Exam.findById(req.params.id);
 
@@ -65,9 +67,9 @@ const getExamById = asyncHandler(async (req, res) => {
 
   // Sécurité : Vérifier si l'étudiant a déjà composé
   if (req.user.role === 'student') {
-    const existingSubmission = await Submission.findOne({ 
-      user: req.user._id, 
-      exam: req.params.id 
+    const existingSubmission = await Submission.findOne({
+      user: req.user._id,
+      exam: req.params.id
     });
 
     if (existingSubmission) {
@@ -98,17 +100,19 @@ const deleteExam = asyncHandler(async (req, res) => {
     throw new Error('Examen non trouvé');
   }
   await exam.deleteOne();
-  
-  // Notification temps réel aux étudiants
+
+  // Notification temps réel globale
   const io = req.app.get('socketio');
-  if (io) io.emit('exam_deleted', req.params.id);
+  if (io) {
+    io.emit('examDeleted', req.params.id);
+  }
 
   res.json({ message: 'Examen supprimé' });
 });
 
 const { generateQCM } = require('../utils/aiService');
 
-// Generer un examen via IA - POST /api/exams/generate
+// Générer un examen via IA - POST /api/exams/generate
 const generateExamFromAI = asyncHandler(async (req, res) => {
   const { lessonContent, questionCount, optionsCount } = req.body;
   console.log("--- IA GENERATION START ---");

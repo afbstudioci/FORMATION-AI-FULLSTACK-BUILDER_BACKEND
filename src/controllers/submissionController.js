@@ -11,21 +11,21 @@ const submitExam = asyncHandler(async (req, res) => {
   const exam = await Exam.findById(examId);
   if (!exam) {
     res.status(404);
-    throw new Error('Examen non trouve');
+    throw new Error('Examen non trouvé');
   }
 
-  // Verification du temps STRICTEMENT sur le serveur
+  // Vérification du temps STRICTEMENT sur le serveur
   const now = new Date();
   if (now < exam.startTime || now > exam.endTime) {
     res.status(403);
-    throw new Error("La periode de soumission est fermee ou n'a pas encore debute");
+    throw new Error("La période de soumission est fermée ou n'a pas encore débuté");
   }
 
-  // Verification si deja soumis
+  // Vérification si déjà soumis
   const alreadySubmitted = await Submission.findOne({ user: userId, exam: examId });
   if (alreadySubmitted) {
     res.status(400);
-    throw new Error("Vous avez deja soumis cet examen");
+    throw new Error("Vous avez déjà soumis cet examen");
   }
 
   // Calcul automatique de la note
@@ -42,19 +42,24 @@ const submitExam = asyncHandler(async (req, res) => {
     submittedAt: now
   });
 
-  // Notification temps reel aux admins
+  // Notification temps réel ciblée pour les administrateurs
   const io = req.app.get('socketio');
-  const submissionWithData = await Submission.findById(submission._id).populate('user', 'fullname matricule').populate('exam', 'title');
-  io.emit('new_submission', submissionWithData);
+  if (io) {
+    const submissionWithData = await Submission.findById(submission._id)
+      .populate('user', 'fullname matricule')
+      .populate('exam', 'title');
+
+    io.to('admin_room').emit('newSubmission', submissionWithData);
+  }
 
   res.status(201).json({
-    message: "Examen soumis avec succes",
+    message: "Examen soumis avec succès",
     score: submission.score,
     status: submission.status
   });
 });
 
-// Recuperer ses propres soumissions - GET /api/submissions/my
+// Récupérer ses propres soumissions - GET /api/submissions/my
 const getMySubmissions = asyncHandler(async (req, res) => {
   const submissions = await Submission.find({ user: req.user._id }).populate('exam', 'title startTime endTime');
   res.json(submissions);
