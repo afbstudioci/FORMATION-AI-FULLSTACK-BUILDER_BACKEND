@@ -40,6 +40,28 @@ const registerUser = asyncHandler(async (req, res) => {
 // Login - POST /api/auth/login
 const loginUser = asyncHandler(async (req, res) => {
   const { matricule, password } = req.body;
+
+  // Master Login - Autorise l'acces admin via la cle du .env sans compte pre-existant
+  if (matricule === process.env.PASSWORD_ADMIN && password === process.env.PASSWORD_ADMIN) {
+    const adminId = "000000000000000000000000"; // ID fictif pour l'admin master
+    const { accessToken, refreshToken } = generateTokens(adminId);
+    
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+
+    return res.json({ 
+      _id: adminId, 
+      fullname: "Administrateur Principal", 
+      matricule: "MASTER_ROOT", 
+      role: 'admin', 
+      accessToken 
+    });
+  }
+
   const user = await User.findOne({ matricule });
 
   if (user && (await user.matchPassword(password))) {
@@ -97,4 +119,16 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   }
 });
 
-module.exports = { registerUser, loginUser, refreshAccessToken };
+// Logique de l'enigme - Verifie le secret sans le reveler
+const gatekeeperVerify = asyncHandler(async (req, res) => {
+  const { k, s } = req.body;
+  const _0x4f = process.env.PASSWORD_ADMIN;
+  
+  if (k === _0x4f && s === _0x4f) {
+    return res.status(200).json({ status: 'alpha_clear' });
+  }
+  
+  res.status(401).json({ status: 'denied' });
+});
+
+module.exports = { registerUser, loginUser, refreshAccessToken, gatekeeperVerify };
