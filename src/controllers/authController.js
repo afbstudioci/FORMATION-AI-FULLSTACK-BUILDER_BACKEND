@@ -99,17 +99,20 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     throw new Error('Non autorise, pas de token');
   }
 
-  const user = await User.findOne({ refreshToken });
-  if (!user) {
-    res.status(403);
-    throw new Error('Token de rafraichissement invalide');
-  }
-
   try {
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-    if (user._id.toString() !== decoded.id) {
+    
+    // Si c'est le Master Admin
+    if (decoded.id === "000000000000000000000000") {
+      const accessToken = jwt.sign({ id: decoded.id }, process.env.JWT_SECRET, { expiresIn: '15m' });
+      return res.json({ accessToken });
+    }
+
+    // Sinon verification en base pour les etudiants
+    const user = await User.findById(decoded.id);
+    if (!user || user.refreshToken !== refreshToken) {
       res.status(403);
-      throw new Error('Token invalide');
+      throw new Error('Token de rafraichissement invalide');
     }
 
     const accessToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '15m' });

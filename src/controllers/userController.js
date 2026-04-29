@@ -1,26 +1,24 @@
 const asyncHandler = require('express-async-handler');
 const User = require('../models/User');
 const Submission = require('../models/Submission');
+const { generateQCM } = require('../utils/aiService');
 
 // Recuperer le profil utilisateur avec stats - GET /api/users/profile
 const getUserProfile = asyncHandler(async (req, res) => {
-  // Gestion du Master Admin virtuel (pas en BDD)
-  if (req.user && req.user._id === "000000000000000000000000") {
-    return res.json({
-      user: {
-        _id: "000000000000000000000000",
-        fullname: "Administrateur Principal",
-        matricule: "MASTER-ROOT",
-        role: "admin",
-        profilePic: "",
-        bio: "Compte de securite maitre du système AFB EXAM.",
-        themePreference: "dark"
-      },
-      stats: null
-    });
+  let user = await User.findById(req.user._id).select('-password');
+  
+  // Si c'est le Master Admin et qu'il n'est pas encore en BDD, on renvoie les infos virtuelles
+  if (!user && req.user._id === "000000000000000000000000") {
+    user = {
+      _id: "000000000000000000000000",
+      fullname: "Master Admin",
+      matricule: "MASTER-ROOT",
+      role: "admin",
+      profilePic: "",
+      bio: "Compte Administrateur Principal AFB EXAM.",
+      themePreference: "dark"
+    };
   }
-
-  const user = await User.findById(req.user._id).select('-password');
   
   if (!user) {
     res.status(404);
@@ -64,13 +62,18 @@ const getUserProfile = asyncHandler(async (req, res) => {
 
 // Mettre a jour le profil - PUT /api/users/profile
 const updateUserProfile = asyncHandler(async (req, res) => {
-  // Le Master Admin ne peut pas etre modifie en BDD car il n'y existe pas
-  if (req.user && req.user._id === "000000000000000000000000") {
-    res.status(403);
-    throw new Error("Le compte Administrateur Principal est protege et ne peut pas etre modifie.");
-  }
+  let user = await User.findById(req.user._id);
 
-  const user = await User.findById(req.user._id);
+  // Si c'est le Master Admin et qu'il n'existe pas en BDD, on l'initialise
+  if (!user && req.user._id === "000000000000000000000000") {
+    user = new User({
+      _id: "000000000000000000000000",
+      fullname: "Master Admin",
+      matricule: "MASTER-ROOT",
+      password: process.env.PASSWORD_ADMIN,
+      role: "admin"
+    });
+  }
 
   if (user) {
     user.fullname = req.body.fullname || user.fullname;
