@@ -7,7 +7,10 @@ const generateQCM = async (lessonContent, questionCount = 5, optionsCount = 4) =
     throw new Error("Clé API Gemini manquante dans le fichier .env");
   }
 
-  const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+  const model = genAI.getGenerativeModel({ 
+    model: "gemini-1.5-flash",
+    generationConfig: { responseMimeType: "application/json" }
+  });
 
   const prompt = `
     Tu es un expert en pédagogie. À partir du contenu de la leçon suivant, génère un examen QCM de ${questionCount} questions.
