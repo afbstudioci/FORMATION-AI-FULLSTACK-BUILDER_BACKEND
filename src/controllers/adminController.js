@@ -58,4 +58,34 @@ const deleteSubmission = asyncHandler(async (req, res) => {
   res.json({ message: 'Copie supprimée avec succès' });
 });
 
-module.exports = { getAllSubmissions, downloadPDF, getAdminStats, deleteSubmission };
+// Récupérer tous les utilisateurs - GET /api/admin/users
+const getUsers = asyncHandler(async (req, res) => {
+  const users = await User.find({}).select('-password');
+  res.json(users);
+});
+
+// Mettre à jour le rôle d'un utilisateur - PATCH /api/admin/users/:id/role
+const updateUserRole = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (!user) {
+    res.status(404);
+    throw new Error('Utilisateur non trouvé');
+  }
+
+  // Empêcher l'admin de se rétrograder lui-même accidentellement (optionnel mais recommandé)
+  if (user._id.toString() === req.user._id.toString()) {
+    res.status(400);
+    throw new Error('Vous ne pouvez pas modifier votre propre rôle');
+  }
+
+  user.role = req.body.role || (user.role === 'admin' ? 'student' : 'admin');
+  await user.save();
+
+  // Notification Temps Réel à l'utilisateur concerné
+  const io = req.app.get('socketio');
+  io.emit('role_updated', { userId: user._id, newRole: user.role });
+
+  res.json({ message: `Rôle mis à jour : ${user.role}`, user });
+});
+
+module.exports = { getAllSubmissions, downloadPDF, getAdminStats, deleteSubmission, getUsers, updateUserRole };
