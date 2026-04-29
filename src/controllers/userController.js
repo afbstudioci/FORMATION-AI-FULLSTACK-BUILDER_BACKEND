@@ -14,7 +14,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
       fullname: "Master Admin",
       matricule: "MASTER-ROOT",
       role: "admin",
-      profilePic: "",
+      profilePic: "https://ui-avatars.com/api/?name=Admin+AFB&background=0984e3&color=fff&size=128",
       bio: "Compte Administrateur Principal AFB EXAM.",
       themePreference: "dark",
       createdAt: new Date("2024-01-01")

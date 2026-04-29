@@ -60,6 +60,7 @@ const loginUser = asyncHandler(async (req, res) => {
       fullname: "Administrateur Principal", 
       matricule: "MASTER_ROOT", 
       role: 'admin', 
+      profilePic: "https://ui-avatars.com/api/?name=Admin+AFB&background=0984e3&color=fff&size=128",
       accessToken 
     });
   }
