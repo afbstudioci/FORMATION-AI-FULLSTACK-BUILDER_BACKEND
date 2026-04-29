@@ -4,7 +4,7 @@ const Submission = require('../models/Submission');
 
 // Creer un examen - POST /api/exams
 const createExam = asyncHandler(async (req, res) => {
-  const { title, description, startTime, endTime, questions } = req.body;
+  const { title, description, startTime, endTime, questions, pointsPerQuestion } = req.body;
 
   if (new Date(startTime) >= new Date(endTime)) {
     res.status(400);
@@ -17,6 +17,7 @@ const createExam = asyncHandler(async (req, res) => {
     startTime,
     endTime,
     questions,
+    pointsPerQuestion: pointsPerQuestion || 1,
     creator: req.user._id
   });
 
@@ -32,12 +33,17 @@ const getExams = asyncHandler(async (req, res) => {
   const exams = await Exam.find({}).select('-questions.correctAnswer').lean();
   
   // Si c'est un étudiant, on marque ceux qu'il a déjà passés
-  if (req.user.role === 'student') {
+  if (req.user && req.user.role === 'student') {
     const userSubmissions = await Submission.find({ user: req.user._id }).select('exam');
-    const submittedExamIds = userSubmissions.map(s => s.exam.toString());
+    const submittedExamIds = new Set(userSubmissions.map(s => s.exam.toString()));
     
     exams.forEach(exam => {
-      exam.hasSubmitted = submittedExamIds.includes(exam._id.toString());
+      exam.hasSubmitted = submittedExamIds.has(exam._id.toString());
+    });
+  } else {
+    // Pour les admins, par défaut false ou non défini
+    exams.forEach(exam => {
+      exam.hasSubmitted = false;
     });
   }
   
