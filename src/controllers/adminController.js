@@ -47,4 +47,15 @@ const downloadPDF = asyncHandler(async (req, res) => {
   res.send(pdfBuffer);
 });
 
-module.exports = { getAllSubmissions, downloadPDF, getAdminStats };
+// Supprimer une soumission - DELETE /api/admin/submissions/:id
+const deleteSubmission = asyncHandler(async (req, res) => {
+  const submission = await Submission.findById(req.params.id);
+  if (!submission) {
+    res.status(404);
+    throw new Error('Copie non trouvée');
+  }
+  await submission.deleteOne();
+  res.json({ message: 'Copie supprimée avec succès' });
+});
+
+module.exports = { getAllSubmissions, downloadPDF, getAdminStats, deleteSubmission };

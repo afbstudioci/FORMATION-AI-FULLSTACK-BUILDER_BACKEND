@@ -29,7 +29,7 @@ const submitExam = asyncHandler(async (req, res) => {
   }
 
   // Calcul automatique de la note
-  const score = calculateScore(exam.questions, answers, tabSwitchesCount);
+  const score = calculateScore(exam.questions, answers, tabSwitchesCount, exam.pointsPerQuestion);
 
   const submission = await Submission.create({
     user: userId,

@@ -13,5 +13,6 @@ router.get('/submissions', getAllSubmissions);
 // Actions plus sensibles nécessitant le mot de passe admin
 router.use(verifyAdminPassword);
 router.get('/submissions/:id/pdf', downloadPDF);
+router.delete('/submissions/:id', deleteSubmission);
 
 module.exports = router;

@@ -1,19 +1,19 @@
-const calculateScore = (examQuestions, userAnswers, tabSwitches) => {
+const calculateScore = (examQuestions, userAnswers, tabSwitches, pointsPerQuestion = 1) => {
   let finalScore = 0;
 
   examQuestions.forEach((question) => {
-    const userAnswer = userAnswers.find(a => a.questionId === question._id.toString());
+    const userAnswer = userAnswers.find(a => a.questionId.toString() === question._id.toString());
     
     if (!userAnswer || !userAnswer.selectedOption) {
-      finalScore += 0; // Pas de reponse
+      finalScore += 0; // Pas de réponse = 0
     } else if (userAnswer.selectedOption === question.correctAnswer) {
-      finalScore += 2; // Bonne reponse
+      finalScore += pointsPerQuestion; // Bonne réponse = +X
     } else {
-      finalScore -= 2; // Mauvaise reponse
+      finalScore -= pointsPerQuestion; // Mauvaise réponse = -X
     }
   });
 
-  // Penalite anti-triche : -1 point par changement d'onglet
+  // Pénalité anti-triche : -1 point par changement d'onglet (Optionnel, on peut le garder ou l'ajuster)
   const penalty = (tabSwitches || 0) * 1;
   finalScore -= penalty;
 
