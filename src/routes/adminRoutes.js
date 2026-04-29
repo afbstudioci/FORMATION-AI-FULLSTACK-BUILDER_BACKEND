@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getAllSubmissions, downloadPDF, getAdminStats } = require('../controllers/adminController');
+const { getAllSubmissions, downloadPDF, getAdminStats, deleteSubmission } = require('../controllers/adminController');
 const { protect, admin } = require('../middleware/authMiddleware');
 const { verifyAdminPassword } = require('../middleware/adminMiddleware');
 
