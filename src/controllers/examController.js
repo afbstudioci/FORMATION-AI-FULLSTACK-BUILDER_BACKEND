@@ -52,4 +52,15 @@ const getExamById = asyncHandler(async (req, res) => {
   res.json(examData);
 });
 
-module.exports = { createExam, getExams, getExamById };
+// Supprimer un examen - DELETE /api/exams/:id
+const deleteExam = asyncHandler(async (req, res) => {
+  const exam = await Exam.findById(req.params.id);
+  if (!exam) {
+    res.status(404);
+    throw new Error('Examen non trouve');
+  }
+  await exam.deleteOne();
+  res.json({ message: 'Examen supprime' });
+});
+
+module.exports = { createExam, getExams, getExamById, deleteExam };

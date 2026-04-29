@@ -1,6 +1,21 @@
 const asyncHandler = require('express-async-handler');
 const Submission = require('../models/Submission');
+const User = require('../models/User');
+const Exam = require('../models/Exam');
 const { generateStudentCopyPDF } = require('../utils/pdfGenerator');
+
+// Recuperer les statistiques globales - GET /api/admin/stats
+const getAdminStats = asyncHandler(async (req, res) => {
+  const totalStudents = await User.countDocuments({ role: 'student' });
+  const totalExams = await Exam.countDocuments({});
+  const totalSubmissions = await Submission.countDocuments({});
+  
+  res.json({
+    totalStudents,
+    totalExams,
+    totalSubmissions
+  });
+});
 
 // Recuperer toutes les soumissions - GET /api/admin/submissions
 const getAllSubmissions = asyncHandler(async (req, res) => {
@@ -32,4 +47,4 @@ const downloadPDF = asyncHandler(async (req, res) => {
   res.send(pdfBuffer);
 });
 
-module.exports = { getAllSubmissions, downloadPDF };
+module.exports = { getAllSubmissions, downloadPDF, getAdminStats };

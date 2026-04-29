@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createExam, getExams, getExamById } = require('../controllers/examController');
+const { createExam, getExams, getExamById, deleteExam } = require('../controllers/examController');
 const { protect, admin } = require('../middleware/authMiddleware');
 
 router.route('/')
@@ -8,6 +8,7 @@ router.route('/')
   .get(protect, getExams);
 
 router.route('/:id')
-  .get(protect, getExamById);
+  .get(protect, getExamById)
+  .delete(protect, admin, deleteExam);
 
 module.exports = router;
