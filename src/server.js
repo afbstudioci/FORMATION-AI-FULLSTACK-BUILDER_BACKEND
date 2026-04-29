@@ -54,8 +54,27 @@ app.use((err, req, res, next) => {
   });
 });
 
+const http = require('http');
+const { Server } = require('socket.io');
+
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: true,
+    credentials: true
+  }
+});
+
+// Partage de l'instance io avec les routes
+app.set('socketio', io);
+
+io.on('connection', (socket) => {
+  console.log('Client connecte:', socket.id);
+  socket.on('disconnect', () => console.log('Client deconnecte'));
+});
+
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
 });

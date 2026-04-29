@@ -37,12 +37,19 @@ const submitExam = asyncHandler(async (req, res) => {
     answers,
     tabSwitchesCount,
     score,
+    status: req.body.status || 'COMPLETED',
     submittedAt: now
   });
 
+  // Notification temps reel aux admins
+  const io = req.app.get('socketio');
+  const submissionWithData = await Submission.findById(submission._id).populate('user', 'fullname matricule').populate('exam', 'title');
+  io.emit('new_submission', submissionWithData);
+
   res.status(201).json({
     message: "Examen soumis avec succes",
-    score: submission.score
+    score: submission.score,
+    status: submission.status
   });
 });
 
