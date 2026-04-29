@@ -21,7 +21,7 @@ const app = express();
 // Middleware de sécurité et utilitaires
 app.use(helmet());
 app.use(cors({
-  origin: true,
+  origin: process.env.ALLOWED_ORIGIN, // Restriction stricte à l'origine autorisée (Vercel)
   credentials: true
 }));
 app.use(express.json());
@@ -60,7 +60,7 @@ const { Server } = require('socket.io');
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: true,
+    origin: process.env.ALLOWED_ORIGIN, // Alignement de la sécurité Socket.io
     credentials: true
   }
 });
