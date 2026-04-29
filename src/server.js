@@ -10,6 +10,7 @@ const authRoutes = require('./routes/authRoutes');
 const examRoutes = require('./routes/examRoutes');
 const submissionRoutes = require('./routes/submissionRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 dotenv.config();
 
@@ -36,6 +37,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/exams', examRoutes);
 app.use('/api/submissions', submissionRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/users', userRoutes);
 
 // Routes de base pour test
 app.get('/', (req, res) => {

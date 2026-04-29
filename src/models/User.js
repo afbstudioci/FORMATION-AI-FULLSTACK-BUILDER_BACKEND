@@ -6,6 +6,9 @@ const userSchema = mongoose.Schema({
   matricule: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   role: { type: String, enum: ['student', 'admin'], default: 'student' },
+  profilePic: { type: String, default: '' },
+  bio: { type: String, default: '' },
+  themePreference: { type: String, default: 'light' },
   refreshToken: { type: String }
 }, {
   timestamps: true
