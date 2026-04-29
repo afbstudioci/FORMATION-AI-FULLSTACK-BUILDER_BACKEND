@@ -107,12 +107,16 @@ const { generateQCM } = require('../utils/aiService');
 // Generer un examen via IA - POST /api/exams/generate
 const generateExamFromAI = asyncHandler(async (req, res) => {
   const { lessonContent, questionCount, optionsCount } = req.body;
+  console.log("--- IA GENERATION START ---");
+  console.log("Content length:", lessonContent?.length);
 
   try {
     const aiResult = await generateQCM(lessonContent, questionCount, optionsCount);
+    console.log("--- IA GENERATION SUCCESS ---");
     res.json(aiResult);
   } catch (err) {
-    console.error("Erreur Gemini:", err);
+    console.error("--- IA GENERATION ERROR ---");
+    console.error(err);
     res.status(500);
     throw new Error("L'IA Gemini a rencontré un problème : " + err.message);
   }
