@@ -12,9 +12,9 @@ const generateTokens = (id) => {
 const registerUser = asyncHandler(async (req, res) => {
   const { fullname, password } = req.body;
 
-  // Generation matricule: LMS-YYYY-RANDOM
+  // Generation matricule: AFB-YYYY-RANDOM
   const randomNum = Math.floor(1000 + Math.random() * 9000);
-  const matricule = `LMS-${new Date().getFullYear()}-${randomNum}`;
+  const matricule = `AFB-${new Date().getFullYear()}-${randomNum}`;
 
   const userExists = await User.findOne({ matricule });
   if (userExists) {
