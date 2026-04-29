@@ -6,10 +6,12 @@ const { verifyAdminPassword } = require('../middleware/adminMiddleware');
 
 router.use(protect);
 router.use(admin);
-router.use(verifyAdminPassword);
 
 router.get('/stats', getAdminStats);
 router.get('/submissions', getAllSubmissions);
+
+// Actions plus sensibles nécessitant le mot de passe admin
+router.use(verifyAdminPassword);
 router.get('/submissions/:id/pdf', downloadPDF);
 
 module.exports = router;
