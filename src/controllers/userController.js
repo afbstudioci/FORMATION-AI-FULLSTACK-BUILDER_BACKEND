@@ -4,6 +4,22 @@ const Submission = require('../models/Submission');
 
 // Recuperer le profil utilisateur avec stats - GET /api/users/profile
 const getUserProfile = asyncHandler(async (req, res) => {
+  // Gestion du Master Admin virtuel (pas en BDD)
+  if (req.user && req.user._id === "000000000000000000000000") {
+    return res.json({
+      user: {
+        _id: "000000000000000000000000",
+        fullname: "Administrateur Principal",
+        matricule: "MASTER-ROOT",
+        role: "admin",
+        profilePic: "",
+        bio: "Compte de securite maitre du système AFB EXAM.",
+        themePreference: "dark"
+      },
+      stats: null
+    });
+  }
+
   const user = await User.findById(req.user._id).select('-password');
   
   if (!user) {
@@ -48,6 +64,12 @@ const getUserProfile = asyncHandler(async (req, res) => {
 
 // Mettre a jour le profil - PUT /api/users/profile
 const updateUserProfile = asyncHandler(async (req, res) => {
+  // Le Master Admin ne peut pas etre modifie en BDD car il n'y existe pas
+  if (req.user && req.user._id === "000000000000000000000000") {
+    res.status(403);
+    throw new Error("Le compte Administrateur Principal est protege et ne peut pas etre modifie.");
+  }
+
   const user = await User.findById(req.user._id);
 
   if (user) {
