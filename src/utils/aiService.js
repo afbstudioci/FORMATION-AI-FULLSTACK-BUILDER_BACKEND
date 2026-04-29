@@ -8,8 +8,7 @@ const generateQCM = async (lessonContent, questionCount = 5, optionsCount = 4) =
   }
 
   const model = genAI.getGenerativeModel({ 
-    model: "gemini-1.5-flash",
-    generationConfig: { responseMimeType: "application/json" }
+    model: "gemini-2.0-flash"
   });
 
   const prompt = `
