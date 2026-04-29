@@ -35,13 +35,16 @@ const getExams = asyncHandler(async (req, res) => {
   // Si c'est un étudiant, on marque ceux qu'il a déjà passés
   if (req.user && req.user.role === 'student') {
     const userSubmissions = await Submission.find({ user: req.user._id }).select('exam');
+    console.log(`Utilisateur ${req.user.fullname} (${req.user._id}) a ${userSubmissions.length} soumissions.`);
+    
     const submittedExamIds = new Set(userSubmissions.map(s => s.exam.toString()));
     
     exams.forEach(exam => {
       exam.hasSubmitted = submittedExamIds.has(exam._id.toString());
+      if (exam.hasSubmitted) console.log(`Examen ${exam.title} marqué comme déjà composé.`);
     });
   } else {
-    // Pour les admins, par défaut false ou non défini
+    // Pour les admins, par défaut false
     exams.forEach(exam => {
       exam.hasSubmitted = false;
     });
