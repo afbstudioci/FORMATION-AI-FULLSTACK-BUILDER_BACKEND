@@ -1,5 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const Exam = require('../models/Exam');
+const Submission = require('../models/Submission');
 
 // Creer un examen - POST /api/exams
 const createExam = asyncHandler(async (req, res) => {
@@ -7,7 +8,7 @@ const createExam = asyncHandler(async (req, res) => {
 
   if (new Date(startTime) >= new Date(endTime)) {
     res.status(400);
-    throw new Error("L'heure de fin doit etre superieure a l'heure de debut");
+    throw new Error("L'heure de fin doit être supérieure à l'heure de début");
   }
 
   const exam = await Exam.create({
@@ -21,15 +22,25 @@ const createExam = asyncHandler(async (req, res) => {
 
   res.status(201).json(exam);
 
-  // Notification temps reel aux etudiants
+  // Notification temps réel aux étudiants
   const io = req.app.get('socketio');
-  io.emit('new_exam', exam);
+  if (io) io.emit('new_exam', exam);
 });
 
 // Recuperer tous les examens - GET /api/exams
 const getExams = asyncHandler(async (req, res) => {
-  // On ne renvoie pas les reponses aux etudiants
-  const exams = await Exam.find({}).select('-questions.correctAnswer');
+  const exams = await Exam.find({}).select('-questions.correctAnswer').lean();
+  
+  // Si c'est un étudiant, on marque ceux qu'il a déjà passés
+  if (req.user.role === 'student') {
+    const userSubmissions = await Submission.find({ user: req.user._id }).select('exam');
+    const submittedExamIds = userSubmissions.map(s => s.exam.toString());
+    
+    exams.forEach(exam => {
+      exam.hasSubmitted = submittedExamIds.includes(exam._id.toString());
+    });
+  }
+  
   res.json(exams);
 });
 
@@ -39,7 +50,20 @@ const getExamById = asyncHandler(async (req, res) => {
 
   if (!exam) {
     res.status(404);
-    throw new Error('Examen non trouve');
+    throw new Error('Examen non trouvé');
+  }
+
+  // Sécurité : Vérifier si l'étudiant a déjà composé
+  if (req.user.role === 'student') {
+    const existingSubmission = await Submission.findOne({ 
+      user: req.user._id, 
+      exam: req.params.id 
+    });
+
+    if (existingSubmission) {
+      res.status(403);
+      throw new Error("Vous avez déjà passé cette composition. Tentative unique verrouillée.");
+    }
   }
 
   const now = new Date();
@@ -61,10 +85,10 @@ const deleteExam = asyncHandler(async (req, res) => {
   const exam = await Exam.findById(req.params.id);
   if (!exam) {
     res.status(404);
-    throw new Error('Examen non trouve');
+    throw new Error('Examen non trouvé');
   }
   await exam.deleteOne();
-  res.json({ message: 'Examen supprime' });
+  res.json({ message: 'Examen supprimé' });
 });
 
 const { generateQCM } = require('../utils/aiService');
@@ -79,7 +103,7 @@ const generateExamFromAI = asyncHandler(async (req, res) => {
   } catch (err) {
     console.error("Erreur Gemini:", err);
     res.status(500);
-    throw new Error("L'IA Gemini a rencontre un probleme : " + err.message);
+    throw new Error("L'IA Gemini a rencontré un problème : " + err.message);
   }
 });
 

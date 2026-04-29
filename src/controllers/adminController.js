@@ -21,7 +21,7 @@ const getAdminStats = asyncHandler(async (req, res) => {
 const getAllSubmissions = asyncHandler(async (req, res) => {
   const submissions = await Submission.find({})
     .populate('user', 'fullname matricule')
-    .populate('exam', 'title questions');
+    .populate('exam', 'title questions startTime endTime');
   res.json(submissions);
 });
 
