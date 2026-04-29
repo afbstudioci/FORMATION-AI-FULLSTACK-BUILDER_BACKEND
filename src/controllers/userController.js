@@ -16,7 +16,8 @@ const getUserProfile = asyncHandler(async (req, res) => {
       role: "admin",
       profilePic: "",
       bio: "Compte Administrateur Principal AFB EXAM.",
-      themePreference: "dark"
+      themePreference: "dark",
+      createdAt: new Date("2024-01-01")
     };
   }
   
