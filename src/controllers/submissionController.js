@@ -37,6 +37,7 @@ const submitExam = asyncHandler(async (req, res) => {
     answers,
     tabSwitchesCount,
     score,
+    pointsPerQuestion: exam.pointsPerQuestion,
     status: req.body.status || 'COMPLETED',
     submittedAt: now
   });

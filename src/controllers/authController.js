@@ -29,7 +29,8 @@ const registerUser = asyncHandler(async (req, res) => {
       _id: user._id, 
       fullname: user.fullname, 
       matricule: user.matricule,
-      role: user.role
+      role: user.role,
+      profilePic: user.profilePic
     });
   } else {
     res.status(400);
@@ -83,6 +84,7 @@ const loginUser = asyncHandler(async (req, res) => {
       fullname: user.fullname, 
       matricule: user.matricule, 
       role: user.role, 
+      profilePic: user.profilePic,
       accessToken 
     });
   } else {
