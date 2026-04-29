@@ -94,6 +94,11 @@ const deleteExam = asyncHandler(async (req, res) => {
     throw new Error('Examen non trouvé');
   }
   await exam.deleteOne();
+  
+  // Notification temps réel aux étudiants
+  const io = req.app.get('socketio');
+  if (io) io.emit('exam_deleted', req.params.id);
+
   res.json({ message: 'Examen supprimé' });
 });
 
