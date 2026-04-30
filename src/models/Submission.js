@@ -10,6 +10,7 @@ const submissionSchema = mongoose.Schema({
   tabSwitchesCount: { type: Number, default: 0 },
   score: { type: Number, default: 0 },
   pointsPerQuestion: { type: Number, default: 1 },
+  status: { type: String, enum: ['COMPLETED', 'ABANDONED'], default: 'COMPLETED' },
   submittedAt: { type: Date, default: Date.now }
 }, {
   timestamps: true

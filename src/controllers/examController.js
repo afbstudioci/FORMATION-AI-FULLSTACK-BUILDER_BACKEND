@@ -33,21 +33,24 @@ const createExam = asyncHandler(async (req, res) => {
 
 // Récupérer tous les examens - GET /api/exams
 const getExams = asyncHandler(async (req, res) => {
-  const exams = await Exam.find({}).select('-questions.correctAnswer').lean();
+  const exams = await Exam.find({}).select('-questions.correctAnswer').sort({ createdAt: -1 }).lean();
 
   // Si c'est un étudiant, on marque ceux qu'il a déjà passés
   if (req.user && req.user.role === 'student') {
-    const userId = new mongoose.Types.ObjectId(req.user._id);
-    const userSubmissions = await Submission.find({ user: userId }).select('exam');
-    console.log(`Recherche soumissions pour ${req.user.fullname} (${userId}) : ${userSubmissions.length} trouvées`);
-
+    const userSubmissions = await Submission.find({ user: req.user._id }).select('exam').lean();
+    
+    // Debug log
+    console.log(`[DEBUG] Dashboard for ${req.user.fullname}: ${userSubmissions.length} submissions found.`);
+    
     const submittedExamIds = new Set(userSubmissions.map(s => s.exam.toString()));
-
+    
     exams.forEach(exam => {
       exam.hasSubmitted = submittedExamIds.has(exam._id.toString());
+      if (exam.hasSubmitted) {
+        console.log(`[DEBUG] Exam marked as submitted: ${exam.title}`);
+      }
     });
   } else {
-    // Pour les admins, par défaut false
     exams.forEach(exam => {
       exam.hasSubmitted = false;
     });

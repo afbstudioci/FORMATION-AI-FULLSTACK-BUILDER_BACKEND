@@ -50,6 +50,12 @@ const submitExam = asyncHandler(async (req, res) => {
       .populate('exam', 'title');
 
     io.to('admin_room').emit('newSubmission', submissionWithData);
+    // On notifie aussi globalement pour que l'etudiant voit son statut changer en temps reel
+    io.emit('submissionUpdate', { 
+      examId: submission.exam, 
+      userId: submission.user,
+      hasSubmitted: true 
+    });
   }
 
   res.status(201).json({
