@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createExam, getExams, getExamById, deleteExam, generateExamFromAI } = require('../controllers/examController');
+const { createExam, getExams, getExamById, deleteExam, generateExamFromAI, togglePublishExam } = require('../controllers/examController');
 const { protect, admin } = require('../middleware/authMiddleware');
 
 router.route('/')
@@ -12,5 +12,7 @@ router.post('/generate', protect, admin, generateExamFromAI);
 router.route('/:id')
   .get(protect, getExamById)
   .delete(protect, admin, deleteExam);
+
+router.put('/:id/publish', protect, admin, togglePublishExam);
 
 module.exports = router;

@@ -71,14 +71,41 @@ app.set('socketio', io);
 io.on('connection', (socket) => {
   console.log('Client connecté:', socket.id);
 
-  // Permet aux administrateurs de rejoindre une salle spécifique pour leurs notifications
   socket.on('join_admin', () => {
     socket.join('admin_room');
     console.log('Un administrateur a rejoint la salle de contrôle:', socket.id);
   });
 
+  socket.on('join_students', () => {
+    socket.join('students_room');
+    console.log('Étudiants rejoint la salle de notification:', socket.id);
+  });
+
   socket.on('disconnect', () => console.log('Client déconnecté'));
 });
+
+// Vérifier chaque minute si un examen devient disponible
+setInterval(async () => {
+  const Exam = require('./models/Exam');
+  const now = new Date();
+  
+  const availableExams = await Exam.find({
+    startTime: { $lte: now },
+    endTime: { $gt: now },
+    notificationsSent: false
+  }).select('_id title startTime');
+
+  for (const exam of availableExams) {
+    io.to('students_room').emit('examAvailable', {
+      examId: exam._id,
+      title: exam.title,
+      message: `L'examen "${exam.title}" est maintenant disponible!`
+    });
+    
+    await Exam.findByIdAndUpdate(exam._id, { notificationsSent: true });
+    console.log(`Notification envoyée pour: ${exam.title}`);
+  }
+}, 60000); // Vérifier toutes les minutes
 
 const PORT = process.env.PORT || 5000;
 

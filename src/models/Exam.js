@@ -11,6 +11,8 @@ const examSchema = mongoose.Schema({
   description: { type: String },
   startTime: { type: Date, required: true },
   endTime: { type: Date, required: true },
+  isPublished: { type: Boolean, default: false },
+  notificationsSent: { type: Boolean, default: false },
   pointsPerQuestion: { type: Number, default: 1 },
   questions: [questionSchema],
   creator: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
