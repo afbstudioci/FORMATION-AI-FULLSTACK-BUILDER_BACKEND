@@ -104,28 +104,20 @@ const getExamById = asyncHandler(async (req, res) => {
     throw new Error("Cet examen n'est pas encore publié");
   }
 
-  if (req.user.role === 'student') {
-    const existingSubmission = await Submission.findOne({
-      user: req.user._id,
-      exam: req.params.id
-    });
-
-    if (existingSubmission) {
-      res.status(403);
-      throw new Error("Vous avez déjà passé cette composition. Tentative unique verrouillée.");
-    }
-  }
-
+  // Vérification uniquement pour la soumission - on laisse l'accès en lecture même si déjà soumis
   const now = new Date();
-  const gracePeriod = 30 * 1000; // 30 seconds
-  if (now.getTime() < (new Date(exam.startTime).getTime() - gracePeriod) && req.user.role !== 'admin') {
-    res.status(403);
-    throw new Error("Cet examen n'est pas encore accessible");
-  }
+  const gracePeriod = 5 * 60 * 1000; // 5 minutes
 
-  if (now > exam.endTime && req.user.role !== 'admin') {
-    res.status(403);
-    throw new Error("Cet examen est terminé");
+  if (req.user.role !== 'admin') {
+    if (now.getTime() < (new Date(exam.startTime).getTime() - gracePeriod)) {
+      res.status(403);
+      throw new Error("Cet examen n'est pas encore accessible");
+    }
+
+    if (now > exam.endTime) {
+      res.status(403);
+      throw new Error("Cet examen est terminé");
+    }
   }
 
   const examData = exam.toObject();
