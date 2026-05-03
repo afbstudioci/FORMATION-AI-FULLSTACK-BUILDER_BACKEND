@@ -18,7 +18,7 @@ const createExam = asyncHandler(async (req, res) => {
     startTime,
     endTime,
     questions,
-    isPublished: isPublished || false,
+    isPublished: isPublished !== undefined ? isPublished : true,
     pointsPerQuestion: pointsPerQuestion || 1,
     creator: req.user._id
   });
@@ -27,7 +27,7 @@ const createExam = asyncHandler(async (req, res) => {
 
   const io = req.app.get('socketio');
   if (io) {
-    io.emit('examCreated', exam);
+    io.emit('examCreated', exam.toJSON ? exam.toJSON() : exam);
   }
 });
 
@@ -56,8 +56,7 @@ const togglePublishExam = asyncHandler(async (req, res) => {
 
 // Récupérer tous les examens - GET /api/exams
 const getExams = asyncHandler(async (req, res) => {
-  const filter = req.user.role === 'student' ? { $or: [{ isPublished: true }, { isPublished: { $exists: false } }] } : {};
-  const exams = await Exam.find(filter).select('-questions.correctAnswer').sort({ createdAt: -1 }).lean();
+  const exams = await Exam.find({}).select('-questions.correctAnswer').sort({ createdAt: -1 }).lean();
 
   const now = new Date();
   
@@ -97,11 +96,6 @@ const getExamById = asyncHandler(async (req, res) => {
   if (!exam) {
     res.status(404);
     throw new Error('Examen non trouvé');
-  }
-
-  if (req.user.role === 'student' && exam.isPublished === false) {
-    res.status(403);
-    throw new Error("Cet examen n'est pas encore publié");
   }
 
   // Vérification uniquement pour la soumission - on laisse l'accès en lecture même si déjà soumis
