@@ -32,11 +32,12 @@ const getUserProfile = asyncHandler(async (req, res) => {
     const submissions = await Submission.find({ user: user._id }).populate('exam');
     
     const totalExams = submissions.length;
-    const totalScore = submissions.reduce((acc, curr) => acc + curr.score, 0);
+    const totalScore = submissions.reduce((acc, curr) => acc + (curr.score || 0), 0);
+    const totalCorrectAnswers = submissions.reduce((acc, curr) => acc + (curr.correctAnswers || 0), 0);
     const totalQuestions = submissions.reduce((acc, curr) => acc + (curr.exam?.questions?.length || 0), 0);
     
     const averageScore = totalExams > 0 ? (totalScore / totalExams).toFixed(2) : 0;
-    const precision = totalQuestions > 0 ? ((totalScore / totalQuestions) * 100).toFixed(1) : 0;
+    const precision = totalQuestions > 0 ? ((totalCorrectAnswers / totalQuestions) * 100).toFixed(1) : 0;
     
     // Calcul pour le Radar de competences (Logique, Vitesse, Precision, Resilience, Rigueur)
     const resilience = submissions.length > 0 
