@@ -117,7 +117,8 @@ const getExamById = asyncHandler(async (req, res) => {
   }
 
   const now = new Date();
-  if (now < exam.startTime && req.user.role !== 'admin') {
+  const gracePeriod = 30 * 1000; // 30 seconds
+  if (now.getTime() < (new Date(exam.startTime).getTime() - gracePeriod) && req.user.role !== 'admin') {
     res.status(403);
     throw new Error("Cet examen n'est pas encore accessible");
   }
