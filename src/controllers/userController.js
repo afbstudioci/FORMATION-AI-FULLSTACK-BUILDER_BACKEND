@@ -3,7 +3,7 @@ const User = require('../models/User');
 const Submission = require('../models/Submission');
 const { generateQCM } = require('../utils/aiService');
 
-// Recuperer le profil utilisateur avec stats - GET /api/users/profile
+// Récupérer le profil utilisateur avec stats - GET /api/users/profile
 const getUserProfile = asyncHandler(async (req, res) => {
   let user = await User.findById(req.user._id).select('-password');
   

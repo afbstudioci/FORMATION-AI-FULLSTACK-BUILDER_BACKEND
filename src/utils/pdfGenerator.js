@@ -61,17 +61,17 @@ const generateStudentCopyPDF = async (submission) => {
 
         ${submission.tabSwitchesCount > 0 ? `
           <div class="penalty-box">
-            <div class="penalty-text">Avertissement : ${submission.tabSwitchesCount} changement(s) d'onglet detecte(s). Penalite de -${submission.tabSwitchesCount} point(s) appliquee.</div>
+            <div class="penalty-text">Avertissement : ${submission.tabSwitchesCount} changement(s) d'onglet détecté(s). Pénalité de -${submission.tabSwitchesCount} point(s) appliquée.</div>
           </div>
         ` : ''}
 
-        <h3>Detail des reponses</h3>
+        <h3>Détail des réponses</h3>
         <table>
           <thead>
             <tr>
               <th>Question</th>
-              <th>Reponse choisie</th>
-              <th>Resultat</th>
+              <th>Réponse choisie</th>
+              <th>Résultat</th>
             </tr>
           </thead>
           <tbody>
@@ -81,7 +81,7 @@ const generateStudentCopyPDF = async (submission) => {
               return `
                 <tr>
                   <td><strong>Q${index + 1}:</strong> ${question?.text.substring(0, 50)}${question?.text.length > 50 ? '...' : ''}</td>
-                  <td>${ans.selectedOption || '<i>Aucune reponse</i>'}</td>
+                  <td>${ans.selectedOption || '<i>Aucune réponse</i>'}</td>
                   <td>
                     <span class="status-tag ${isCorrect ? 'status-correct' : 'status-incorrect'}">
                       ${isCorrect ? 'Correct' : 'Incorrect'}

@@ -4,7 +4,7 @@ const User = require('../models/User');
 const Exam = require('../models/Exam');
 const { generateStudentCopyPDF } = require('../utils/pdfGenerator');
 
-// Recuperer les statistiques globales - GET /api/admin/stats
+// Récupérer les statistiques globales - GET /api/admin/stats
 const getAdminStats = asyncHandler(async (req, res) => {
   const totalStudents = await User.countDocuments({ role: 'student' });
   const totalExams = await Exam.countDocuments({});
@@ -17,7 +17,7 @@ const getAdminStats = asyncHandler(async (req, res) => {
   });
 });
 
-// Recuperer toutes les soumissions - GET /api/admin/submissions
+// Récupérer toutes les soumissions - GET /api/admin/submissions
 const getAllSubmissions = asyncHandler(async (req, res) => {
   const submissions = await Submission.find({})
     .populate('user', 'fullname matricule')
@@ -25,7 +25,7 @@ const getAllSubmissions = asyncHandler(async (req, res) => {
   res.json(submissions);
 });
 
-// Telecharger une copie PDF - GET /api/admin/submissions/:id/pdf
+// Télécharger une copie PDF - GET /api/admin/submissions/:id/pdf
 const downloadPDF = asyncHandler(async (req, res) => {
   const submission = await Submission.findById(req.params.id)
     .populate('user', 'fullname matricule')
@@ -33,7 +33,7 @@ const downloadPDF = asyncHandler(async (req, res) => {
 
   if (!submission) {
     res.status(404);
-    throw new Error('Soumission non trouvee');
+    throw new Error('Soumission non trouvée');
   }
 
   const pdfBuffer = await generateStudentCopyPDF(submission);
