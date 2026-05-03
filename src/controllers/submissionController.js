@@ -112,4 +112,4 @@ const getMySubmissions = asyncHandler(async (req, res) => {
   res.json(submissions);
 });
 
-module.exports = { submitExam, getMySubmissions };
+module.exports = { startExamSession, submitExam, getMySubmissions };
