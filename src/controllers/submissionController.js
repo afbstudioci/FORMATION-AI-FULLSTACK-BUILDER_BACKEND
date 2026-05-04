@@ -88,7 +88,7 @@ const submitExam = asyncHandler(async (req, res) => {
   if (io) {
     const submissionWithData = await Submission.findById(submission._id)
       .populate('user', 'fullname matricule')
-      .populate('exam', 'title');
+      .populate('exam', 'title questions');
 
     io.to('admin_room').emit('newSubmission', submissionWithData);
     // On notifie aussi globalement pour que l'étudiant voit son statut changer en temps réel
