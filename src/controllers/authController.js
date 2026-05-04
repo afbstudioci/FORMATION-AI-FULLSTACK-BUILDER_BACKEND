@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 
 const generateTokens = (id) => {
   const accessToken = jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '15m' });
-  const refreshToken = jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+  const refreshToken = jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '365d' });
   return { accessToken, refreshToken };
 };
 
@@ -21,6 +21,12 @@ const registerUser = asyncHandler(async (req, res) => {
   if (userExists) {
     res.status(400);
     throw new Error('Matricule déjà existant, réessayez');
+  }
+
+  const nameExists = await User.findOne({ fullname: new RegExp(`^${fullname}$`, 'i') });
+  if (nameExists) {
+    res.status(400);
+    throw new Error("Ce nom d'utilisateur est déjà utilisé");
   }
 
   const user = await User.create({ fullname, matricule, password });
@@ -63,7 +69,7 @@ const loginUser = asyncHandler(async (req, res) => {
       secure: true,
       sameSite: 'none',
       partitioned: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000
+      maxAge: 365 * 24 * 60 * 60 * 1000 // 1 an
     });
 
     return res.json({
@@ -88,7 +94,7 @@ const loginUser = asyncHandler(async (req, res) => {
       httpOnly: true,
       secure: true, // Requis pour SameSite=none
       sameSite: 'none',
-      maxAge: 7 * 24 * 60 * 60 * 1000
+      maxAge: 365 * 24 * 60 * 60 * 1000 // 1 an
     });
 
     res.json({
