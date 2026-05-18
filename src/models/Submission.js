@@ -5,7 +5,10 @@ const submissionSchema = mongoose.Schema({
   exam: { type: mongoose.Schema.Types.ObjectId, ref: 'Exam', required: true },
   answers: [{
     questionId: { type: String, required: true },
-    selectedOption: { type: String }
+    selectedOption: { type: String },
+    textAnswer: { type: String },
+    score: { type: Number, default: 0 },
+    feedback: { type: String }
   }],
   tabSwitchesCount: { type: Number, default: 0 },
   score: { type: Number, default: 0 },
