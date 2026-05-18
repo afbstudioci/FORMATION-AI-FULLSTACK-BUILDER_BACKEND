@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getAllSubmissions, downloadPDF, getAdminStats, deleteSubmission, getUsers, updateUserRole } = require('../controllers/adminController');
+const { getAllSubmissions, downloadPDF, getAdminStats, deleteSubmission, getUsers, updateUserRole, regradeSubmission } = require('../controllers/adminController');
 const { protect, admin } = require('../middleware/authMiddleware');
 const { verifyAdminPassword } = require('../middleware/adminMiddleware');
 
@@ -16,5 +16,6 @@ router.patch('/users/:id/role', updateUserRole);
 router.use(verifyAdminPassword);
 router.get('/submissions/:id/pdf', downloadPDF);
 router.delete('/submissions/:id', deleteSubmission);
+router.post('/submissions/:id/regrade', regradeSubmission);
 
 module.exports = router;

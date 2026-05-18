@@ -69,26 +69,59 @@ const generateStudentCopyPDF = async (submission) => {
         <table>
           <thead>
             <tr>
-              <th>Question</th>
-              <th>Réponse choisie</th>
-              <th>Résultat</th>
+              <th style="width: 35%;">Question</th>
+              <th style="width: 45%;">Détails & Réponses</th>
+              <th style="width: 20%;">Score obtenu</th>
             </tr>
           </thead>
           <tbody>
             ${submission.answers.map((ans, index) => {
               const question = submission.exam.questions.find(q => q._id.toString() === ans.questionId);
-              const isCorrect = ans.selectedOption === question?.correctAnswer;
-              return `
-                <tr>
-                  <td><strong>Q${index + 1}:</strong> ${question?.text.substring(0, 50)}${question?.text.length > 50 ? '...' : ''}</td>
-                  <td>${ans.selectedOption || '<i>Aucune réponse</i>'}</td>
-                  <td>
-                    <span class="status-tag ${isCorrect ? 'status-correct' : 'status-incorrect'}">
-                      ${isCorrect ? 'Correct' : 'Incorrect'}
-                    </span>
-                  </td>
-                </tr>
-              `;
+              const isQCM = !question || !question.type || question.type === 'qcm';
+              
+              if (isQCM) {
+                const isCorrect = ans.selectedOption === question?.correctAnswer;
+                const points = isCorrect ? submission.pointsPerQuestion : -submission.pointsPerQuestion;
+                return `
+                  <tr>
+                    <td style="vertical-align: top;">
+                      <strong>Q${index + 1} (QCM):</strong><br/>
+                      <span style="font-size: 11px; color: #636E72;">${question?.text}</span>
+                    </td>
+                    <td style="vertical-align: top;">
+                      <strong>Saisie :</strong> ${ans.selectedOption || '<i>Aucune réponse</i>'}<br/>
+                      <small style="color: #0984E3; font-weight: 600;">Attendu : ${question?.correctAnswer}</small>
+                    </td>
+                    <td style="vertical-align: top;">
+                      <span class="status-tag ${isCorrect ? 'status-correct' : 'status-incorrect'}">
+                        ${isCorrect ? 'Correct' : 'Incorrect'} (${isCorrect ? '+' : ''}${points} pts)
+                      </span>
+                    </td>
+                  </tr>
+                `;
+              } else {
+                const isPositive = ans.score > 0;
+                return `
+                  <tr>
+                    <td style="vertical-align: top;">
+                      <strong>Q${index + 1} (Rédigée):</strong><br/>
+                      <span style="font-size: 11px; color: #636E72;">${question?.text}</span>
+                    </td>
+                    <td style="vertical-align: top;">
+                      <div style="margin-bottom: 5px;"><strong>Rédigé :</strong> ${ans.textAnswer || '<i>Aucune réponse</i>'}</div>
+                      <div style="font-size: 11px; color: #2d3436; background: #f1f2f6; padding: 6px; border-radius: 4px; margin-top: 5px;">
+                        <strong>Attendu :</strong> ${question?.correctAnswer}
+                      </div>
+                      ${ans.feedback ? `<div style="font-size: 11px; color: #636e72; font-style: italic; margin-top: 5px;"><strong>Correction :</strong> ${ans.feedback}</div>` : ''}
+                    </td>
+                    <td style="vertical-align: top;">
+                      <span class="status-tag ${isPositive ? 'status-correct' : 'status-incorrect'}" style="white-space: nowrap;">
+                        ${ans.score} / ${submission.pointsPerQuestion} pts
+                      </span>
+                    </td>
+                  </tr>
+                `;
+              }
             }).join('')}
           </tbody>
         </table>

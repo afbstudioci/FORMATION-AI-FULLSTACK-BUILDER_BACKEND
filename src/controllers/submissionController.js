@@ -59,11 +59,11 @@ const submitExam = asyncHandler(async (req, res) => {
     throw new Error("Vous avez déjà soumis cet examen");
   }
 
-  const score = calculateScore(exam.questions, answers, tabSwitchesCount, exam.pointsPerQuestion);
+  const { score, answers: gradedAnswers } = await calculateScore(exam.questions, answers, tabSwitchesCount, exam.pointsPerQuestion);
   const now = new Date();
 
   if (submission) {
-    submission.answers = answers;
+    submission.answers = gradedAnswers;
     submission.tabSwitchesCount = tabSwitchesCount;
     submission.score = score;
     submission.status = req.body.status || 'COMPLETED';
@@ -74,7 +74,7 @@ const submitExam = asyncHandler(async (req, res) => {
     submission = await Submission.create({
       user: userId,
       exam: examId,
-      answers,
+      answers: gradedAnswers,
       tabSwitchesCount,
       score,
       pointsPerQuestion: exam.pointsPerQuestion,

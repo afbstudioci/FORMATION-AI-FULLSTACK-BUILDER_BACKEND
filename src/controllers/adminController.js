@@ -99,4 +99,68 @@ const updateUserRole = asyncHandler(async (req, res) => {
   res.json({ message: `Rôle mis à jour : ${user.role}`, user });
 });
 
-module.exports = { getAllSubmissions, downloadPDF, getAdminStats, deleteSubmission, getUsers, updateUserRole };
+// Recorriger manuellement une copie - POST /api/admin/submissions/:id/regrade
+const regradeSubmission = asyncHandler(async (req, res) => {
+  const { answers } = req.body; // Array of { questionId, score, feedback }
+  
+  if (!answers || !Array.isArray(answers)) {
+    res.status(400);
+    throw new Error("Le format des réponses de recorrection est invalide");
+  }
+
+  const submission = await Submission.findById(req.params.id)
+    .populate('user', 'fullname matricule')
+    .populate('exam', 'title questions pointsPerQuestion');
+
+  if (!submission) {
+    res.status(404);
+    throw new Error('Copie non trouvée');
+  }
+
+  // Mettre à jour chaque réponse soumise avec les scores/feedbacks de recorrection
+  answers.forEach((regrade) => {
+    const originalAnswer = submission.answers.find(a => a.questionId.toString() === regrade.questionId.toString());
+    if (originalAnswer) {
+      if (regrade.score !== undefined) {
+        originalAnswer.score = Number(regrade.score);
+      }
+      if (regrade.feedback !== undefined) {
+        originalAnswer.feedback = regrade.feedback;
+      }
+    }
+  });
+
+  // Calculer la note globale : somme des scores individuels - pénalité d'onglets
+  const sumScores = submission.answers.reduce((acc, ans) => acc + (ans.score || 0), 0);
+  const penalty = (submission.tabSwitchesCount || 0) * 1;
+  
+  // RÈGLE D'OR : La note globale ne peut pas être négative
+  submission.score = Math.max(0, sumScores - penalty);
+  
+  await submission.save();
+
+  // Notification temps réel ciblée
+  const io = req.app.get('socketio');
+  if (io) {
+    // Recharger la soumission mise à jour avec toutes les infos peuplées
+    const updatedSub = await Submission.findById(submission._id)
+      .populate('user', 'fullname matricule')
+      .populate('exam', 'title questions pointsPerQuestion');
+
+    // Émettre à la room admin et globale pour la mise à jour immédiate
+    io.to('admin_room').emit('newSubmission', updatedSub);
+    io.emit('submissionUpdate', { 
+      examId: submission.exam._id, 
+      userId: submission.user._id,
+      hasSubmitted: true,
+      score: submission.score
+    });
+  }
+
+  res.json({
+    message: "Copie recorrigée et note actualisée avec succès",
+    submission
+  });
+});
+
+module.exports = { getAllSubmissions, downloadPDF, getAdminStats, deleteSubmission, getUsers, updateUserRole, regradeSubmission };
