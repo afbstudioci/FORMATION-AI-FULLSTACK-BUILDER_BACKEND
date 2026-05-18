@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 
 // Créer un examen - POST /api/exams
 const createExam = asyncHandler(async (req, res) => {
-  const { title, description, startTime, endTime, questions, pointsPerQuestion, isPublished } = req.body;
+  const { title, description, type, startTime, endTime, questions, pointsPerQuestion, isPublished } = req.body;
 
   if (new Date(startTime) >= new Date(endTime)) {
     res.status(400);
@@ -15,6 +15,7 @@ const createExam = asyncHandler(async (req, res) => {
   const exam = await Exam.create({
     title,
     description,
+    type,
     startTime,
     endTime,
     questions,
