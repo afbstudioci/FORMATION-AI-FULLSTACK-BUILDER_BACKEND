@@ -10,6 +10,7 @@ const questionSchema = mongoose.Schema({
 const examSchema = mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String },
+  type: { type: String, enum: ['qcm', 'grattage', 'mixed'], default: 'qcm' },
   startTime: { type: Date, required: true },
   endTime: { type: Date, required: true },
   isPublished: { type: Boolean, default: false },

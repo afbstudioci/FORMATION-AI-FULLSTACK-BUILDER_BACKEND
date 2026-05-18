@@ -48,8 +48,10 @@ const generateStudentCopyPDF = async (submission) => {
           <div class="info-card">
             <div class="info-label">Épreuve</div>
             <div class="info-value">${submission.exam.title}</div>
-            <div class="info-label" style="margin-top: 10px;">ID Soumission</div>
-            <div class="info-value">${submission._id.toString().substring(0, 8).toUpperCase()}</div>
+            <div class="info-label" style="margin-top: 10px;">Type d'épreuve</div>
+            <div class="info-value" style="font-weight: 700; color: #0984e3;">
+              ${submission.exam.type === 'qcm' ? 'QCM UNIQUEMENT' : (submission.exam.type === 'grattage' ? 'GRATTAGE UNIQUEMENT' : 'MIXTE (QCM & GRATTAGE)')}
+            </div>
           </div>
         </div>
 

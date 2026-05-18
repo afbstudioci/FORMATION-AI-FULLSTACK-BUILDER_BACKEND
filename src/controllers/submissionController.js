@@ -59,7 +59,7 @@ const submitExam = asyncHandler(async (req, res) => {
     throw new Error("Vous avez déjà soumis cet examen");
   }
 
-  const { score, answers: gradedAnswers } = await calculateScore(exam.questions, answers, tabSwitchesCount, exam.pointsPerQuestion);
+  const { score, answers: gradedAnswers } = await calculateScore(exam.questions, answers, tabSwitchesCount, exam.pointsPerQuestion, exam.type);
   const now = new Date();
 
   if (submission) {

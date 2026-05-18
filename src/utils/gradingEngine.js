@@ -1,11 +1,11 @@
 const { gradeOpenQuestion } = require('./aiService');
 
-const calculateScore = async (examQuestions, userAnswers, tabSwitches, pointsPerQuestion = 1) => {
+const calculateScore = async (examQuestions, userAnswers, tabSwitches, pointsPerQuestion = 1, examType = 'qcm') => {
   let finalScore = 0;
   const p = Number(pointsPerQuestion) || 1;
 
-  // Détecter si l'examen est mixte (contient au moins un QCM)
-  const isMixed = examQuestions.some(q => !q.type || q.type === 'qcm');
+  // Détecter si l'examen est mixte ou si c'est un QCM
+  const isMixed = examType === 'mixed' || (!examType && examQuestions.some(q => !q.type || q.type === 'qcm'));
   const gradedAnswers = [];
 
   for (const question of examQuestions) {
