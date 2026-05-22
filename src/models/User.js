@@ -9,7 +9,17 @@ const userSchema = mongoose.Schema({
   profilePic: { type: String, default: '' },
   bio: { type: String, default: '' },
   themePreference: { type: String, default: 'light' },
-  refreshToken: { type: String }
+  refreshToken: { type: String },
+  stats: {
+    averageScore: { type: Number, default: 0 },
+    totalExams: { type: Number, default: 0 },
+    precision: { type: Number, default: 0 },
+    resilience: { type: Number, default: 100 },
+    totalQuestions: { type: Number, default: 0 },
+    totalCorrectAnswers: { type: Number, default: 0 },
+    totalScore: { type: Number, default: 0 },
+    totalTabSwitchesCount: { type: Number, default: 0 }
+  }
 }, {
   timestamps: true
 });

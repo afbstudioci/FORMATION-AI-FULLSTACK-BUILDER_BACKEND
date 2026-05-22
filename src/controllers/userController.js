@@ -29,20 +29,83 @@ const getUserProfile = asyncHandler(async (req, res) => {
   // Calcul des stats pour les etudiants
   let stats = null;
   if (user.role === 'student') {
-    const submissions = await Submission.find({ user: user._id }).populate('exam');
-    
-    const totalExams = submissions.length;
-    const totalScore = submissions.reduce((acc, curr) => acc + (curr.score || 0), 0);
-    const totalCorrectAnswers = submissions.reduce((acc, curr) => acc + (curr.correctAnswers || 0), 0);
-    const totalQuestions = submissions.reduce((acc, curr) => acc + (curr.exam?.questions?.length || 0), 0);
-    
-    const averageScore = totalExams > 0 ? (totalScore / totalExams).toFixed(2) : 0;
-    const precision = totalQuestions > 0 ? ((totalCorrectAnswers / totalQuestions) * 100).toFixed(1) : 0;
-    
-    // Calcul pour le Radar de competences (Logique, Vitesse, Precision, Resilience, Rigueur)
-    const resilience = submissions.length > 0 
-      ? Math.max(0, 100 - (submissions.reduce((acc, curr) => acc + curr.tabSwitchesCount, 0) * 10)) 
-      : 100;
+    // Migration à la volée transparente pour les utilisateurs existants
+    if (!user.stats || user.stats.totalExams === 0) {
+      const submissions = await Submission.find({ user: user._id }).populate('exam');
+      if (submissions.length > 0) {
+        let totalScore = 0;
+        let totalCorrectAnswers = 0;
+        let totalQuestions = 0;
+        let totalTabSwitchesCount = 0;
+        let totalExams = 0;
+
+        for (const sub of submissions) {
+          if (sub.status === 'COMPLETED') {
+            totalExams++;
+            totalScore += sub.score || 0;
+            totalTabSwitchesCount += sub.tabSwitchesCount || 0;
+
+            // Calculer correctAnswersCount et questionsCount s'ils ne sont pas stockés sur la soumission
+            let correctAnswersCount = sub.correctAnswersCount || 0;
+            let questionsCount = sub.questionsCount || (sub.exam?.questions?.length || 0);
+
+            if (correctAnswersCount === 0 && sub.exam) {
+              const p = sub.pointsPerQuestion || 1;
+              sub.answers.forEach(ans => {
+                const q = sub.exam.questions.find(quest => quest._id.toString() === ans.questionId.toString());
+                if (q) {
+                  if (q.type === 'qcm' || !q.type) {
+                    if (ans.selectedOption === q.correctAnswer) correctAnswersCount++;
+                  } else {
+                    if (ans.score >= p / 2) correctAnswersCount++;
+                  }
+                }
+              });
+              // Sauvegarder sur la soumission
+              sub.correctAnswersCount = correctAnswersCount;
+              sub.questionsCount = questionsCount;
+              await sub.save();
+            }
+
+            totalCorrectAnswers += correctAnswersCount;
+            totalQuestions += questionsCount;
+          }
+        }
+
+        if (totalExams > 0) {
+          const averageScore = Number((totalScore / totalExams).toFixed(2));
+          const precision = totalQuestions > 0 ? Number(((totalCorrectAnswers / totalQuestions) * 100).toFixed(1)) : 0;
+          const resilience = Math.max(0, 100 - (totalTabSwitchesCount * 10 / totalExams));
+
+          const updatedStats = {
+            averageScore,
+            totalExams,
+            precision,
+            resilience,
+            totalQuestions,
+            totalCorrectAnswers,
+            totalScore,
+            totalTabSwitchesCount
+          };
+
+          // Recharger le document mis à jour de User
+          user = await User.findByIdAndUpdate(user._id, { stats: updatedStats }, { new: true }).select('-password');
+        }
+      }
+    }
+
+    // Si l'utilisateur n'a toujours pas de stats (aucun examen passé), on renvoie les valeurs par défaut
+    const currentStats = user.stats || {
+      averageScore: 0,
+      totalExams: 0,
+      precision: 0,
+      resilience: 100
+    };
+
+    const averageScore = currentStats.averageScore || 0;
+    const totalExams = currentStats.totalExams || 0;
+    const precision = currentStats.precision || 0;
+    const resilience = currentStats.resilience !== undefined ? currentStats.resilience : 100;
 
     stats = {
       averageScore,
@@ -54,7 +117,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
         { subject: 'Vitesse', A: Math.min(100, totalExams * 20), fullMark: 100 },
         { subject: 'Precision', A: precision, fullMark: 100 },
         { subject: 'Resilience', A: resilience, fullMark: 100 },
-        { subject: 'Rigueur', A: Math.max(0, 100 - (submissions.length * 2)), fullMark: 100 },
+        { subject: 'Rigueur', A: Math.max(0, 100 - (totalExams * 2)), fullMark: 100 },
       ]
     };
   }

@@ -132,6 +132,9 @@ const deleteExam = asyncHandler(async (req, res) => {
   }
   await exam.deleteOne();
 
+  // Suppression en cascade de toutes les copies (soumissions) de cet examen pour libérer l'espace MongoDB
+  await Submission.deleteMany({ exam: req.params.id });
+
   // Notification temps réel globale
   const io = req.app.get('socketio');
   if (io) {

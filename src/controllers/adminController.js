@@ -117,6 +117,9 @@ const regradeSubmission = asyncHandler(async (req, res) => {
     throw new Error('Copie non trouvée');
   }
 
+  const oldScore = submission.score || 0;
+  const oldCorrectAnswers = submission.correctAnswersCount || 0;
+
   // Mettre à jour chaque réponse soumise avec les scores/feedbacks de recorrection
   answers.forEach((regrade) => {
     const originalAnswer = submission.answers.find(a => a.questionId.toString() === regrade.questionId.toString());
@@ -136,8 +139,47 @@ const regradeSubmission = asyncHandler(async (req, res) => {
   
   // RÈGLE D'OR : La note globale ne peut pas être négative
   submission.score = Math.max(0, sumScores - penalty);
+
+  // Recalculer le nombre de réponses correctes après recorrection
+  let newCorrectAnswersCount = 0;
+  const p = submission.exam.pointsPerQuestion || 1;
+  submission.answers.forEach(ans => {
+    const q = submission.exam.questions.find(quest => quest._id.toString() === ans.questionId.toString());
+    if (q) {
+      const isQCM = !q.type || q.type === 'qcm';
+      if (isQCM) {
+        if (ans.selectedOption === q.correctAnswer) {
+          newCorrectAnswersCount++;
+        }
+      } else {
+        if (ans.score >= p / 2) {
+          newCorrectAnswersCount++;
+        }
+      }
+    }
+  });
+
+  submission.correctAnswersCount = newCorrectAnswersCount;
   
   await submission.save();
+
+  // Ajuster les statistiques permanentes de l'étudiant
+  const student = await User.findById(submission.user._id);
+  if (student && student.stats) {
+    const scoreDiff = submission.score - oldScore;
+    const correctAnswersDiff = newCorrectAnswersCount - oldCorrectAnswers;
+
+    student.stats.totalScore += scoreDiff;
+    student.stats.totalCorrectAnswers += correctAnswersDiff;
+
+    student.stats.averageScore = Number((student.stats.totalScore / student.stats.totalExams).toFixed(2));
+    student.stats.precision = student.stats.totalQuestions > 0
+      ? Number(((student.stats.totalCorrectAnswers / student.stats.totalQuestions) * 100).toFixed(1))
+      : 0;
+
+    await student.save();
+    console.log(`[STATS] Stats adaptées après recorrection pour l'étudiant ${student.fullname}. Score diff: ${scoreDiff}, Correct diff: ${correctAnswersDiff}`);
+  }
 
   // Notification temps réel ciblée
   const io = req.app.get('socketio');

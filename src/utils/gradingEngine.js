@@ -2,6 +2,7 @@ const { gradeOpenQuestion } = require('./aiService');
 
 const calculateScore = async (examQuestions, userAnswers, tabSwitches, pointsPerQuestion = 1, examType = 'qcm') => {
   let finalScore = 0;
+  let correctAnswersCount = 0;
   const p = Number(pointsPerQuestion) || 1;
 
   // Détecter si l'examen est mixte ou si c'est un QCM
@@ -21,6 +22,7 @@ const calculateScore = async (examQuestions, userAnswers, tabSwitches, pointsPer
         if (selectedOption === question.correctAnswer) {
           qScore = p;
           qFeedback = "Correct";
+          correctAnswersCount++;
         } else {
           qScore = -p;
           qFeedback = "Incorrect";
@@ -48,6 +50,10 @@ const calculateScore = async (examQuestions, userAnswers, tabSwitches, pointsPer
       );
 
       finalScore += aiResult.score;
+      if (aiResult.score >= p / 2) {
+        correctAnswersCount++;
+      }
+
       gradedAnswers.push({
         questionId: question._id.toString(),
         textAnswer,
@@ -64,7 +70,9 @@ const calculateScore = async (examQuestions, userAnswers, tabSwitches, pointsPer
   // RÈGLE D'OR : Une note globale ne peut pas être négative
   return {
     score: Math.max(0, finalScore),
-    answers: gradedAnswers
+    answers: gradedAnswers,
+    correctAnswersCount,
+    questionsCount: examQuestions.length
   };
 };
 

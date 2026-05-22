@@ -59,14 +59,19 @@ const submitExam = asyncHandler(async (req, res) => {
     throw new Error("Vous avez déjà soumis cet examen");
   }
 
-  const { score, answers: gradedAnswers } = await calculateScore(exam.questions, answers, tabSwitchesCount, exam.pointsPerQuestion, exam.type);
+  const { score, answers: gradedAnswers, correctAnswersCount, questionsCount } = await calculateScore(exam.questions, answers, tabSwitchesCount, exam.pointsPerQuestion, exam.type);
   const now = new Date();
+
+  const targetStatus = req.body.status || 'COMPLETED';
+  const isCompleting = targetStatus === 'COMPLETED' && (!submission || submission.status !== 'COMPLETED');
 
   if (submission) {
     submission.answers = gradedAnswers;
     submission.tabSwitchesCount = tabSwitchesCount;
     submission.score = score;
-    submission.status = req.body.status || 'COMPLETED';
+    submission.status = targetStatus;
+    submission.correctAnswersCount = correctAnswersCount;
+    submission.questionsCount = questionsCount;
     submission.submittedAt = now;
     await submission.save();
   } else {
@@ -78,9 +83,46 @@ const submitExam = asyncHandler(async (req, res) => {
       tabSwitchesCount,
       score,
       pointsPerQuestion: exam.pointsPerQuestion,
-      status: req.body.status || 'COMPLETED',
+      status: targetStatus,
+      correctAnswersCount,
+      questionsCount,
       submittedAt: now
     });
+  }
+
+  // Mise à jour des statistiques utilisateur permanentes si l'examen est terminé
+  if (isCompleting) {
+    const User = require('../models/User');
+    const user = await User.findById(userId);
+    if (user) {
+      if (!user.stats) {
+        user.stats = {
+          averageScore: 0,
+          totalExams: 0,
+          precision: 0,
+          resilience: 100,
+          totalQuestions: 0,
+          totalCorrectAnswers: 0,
+          totalScore: 0,
+          totalTabSwitchesCount: 0
+        };
+      }
+
+      user.stats.totalExams += 1;
+      user.stats.totalScore += score;
+      user.stats.totalCorrectAnswers += correctAnswersCount;
+      user.stats.totalQuestions += questionsCount;
+      user.stats.totalTabSwitchesCount += tabSwitchesCount;
+
+      user.stats.averageScore = Number((user.stats.totalScore / user.stats.totalExams).toFixed(2));
+      user.stats.precision = user.stats.totalQuestions > 0
+        ? Number(((user.stats.totalCorrectAnswers / user.stats.totalQuestions) * 100).toFixed(1))
+        : 0;
+      user.stats.resilience = Math.max(0, 100 - (user.stats.totalTabSwitchesCount * 10 / user.stats.totalExams));
+
+      await user.save();
+      console.log(`[STATS] Stats mises à jour pour l'étudiant ${user.fullname}. Total examens : ${user.stats.totalExams}, Moyenne : ${user.stats.averageScore}%`);
+    }
   }
 
   // Notification temps réel ciblée pour les administrateurs

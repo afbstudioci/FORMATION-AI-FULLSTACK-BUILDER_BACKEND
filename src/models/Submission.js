@@ -14,6 +14,8 @@ const submissionSchema = mongoose.Schema({
   score: { type: Number, default: 0 },
   pointsPerQuestion: { type: Number, default: 1 },
   status: { type: String, enum: ['IN_PROGRESS', 'COMPLETED', 'ABANDONED'], default: 'COMPLETED' },
+  correctAnswersCount: { type: Number, default: 0 },
+  questionsCount: { type: Number, default: 0 },
   submittedAt: { type: Date, default: Date.now }
 }, {
   timestamps: true
