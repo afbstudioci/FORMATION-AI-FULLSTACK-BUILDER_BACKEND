@@ -144,16 +144,22 @@ const deleteExam = asyncHandler(async (req, res) => {
   res.json({ message: 'Examen supprimé' });
 });
 
-const { generateQCM } = require('../utils/aiService');
+const { generateQCM, generateGrattageExam } = require('../utils/aiService');
 
 // Générer un examen via IA - POST /api/exams/generate
 const generateExamFromAI = asyncHandler(async (req, res) => {
-  const { lessonContent, questionCount, optionsCount } = req.body;
+  const { lessonContent, questionCount, optionsCount, type } = req.body;
   console.log("--- IA GENERATION START ---");
   console.log("Content length:", lessonContent?.length);
+  console.log("Type demandé:", type);
 
   try {
-    const aiResult = await generateQCM(lessonContent, questionCount, optionsCount);
+    let aiResult;
+    if (type === 'grattage') {
+      aiResult = await generateGrattageExam(lessonContent, questionCount);
+    } else {
+      aiResult = await generateQCM(lessonContent, questionCount, optionsCount);
+    }
     console.log("--- IA GENERATION SUCCESS ---");
     res.json(aiResult);
   } catch (err) {

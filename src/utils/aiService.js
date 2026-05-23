@@ -82,19 +82,20 @@ const gradeOpenQuestion = async (questionText, expectedAnswer, studentAnswer, ma
 
     Informations sur la question :
     - Question posée : "${questionText}"
-    - Réponse attendue (référence) : "${expectedAnswer}"
+    - Réponse attendue (référence et critères) : "${expectedAnswer}"
     - Réponse rédigée par l'étudiant : "${studentAnswer}"
     - Note maximale possible (maxPoints) : ${maxPoints}
     - Note minimale autorisée (minScore) : ${minScore}
     - Type de devoir : ${isMixed ? "Mixte (QCM + Grattage) - Note minimale négative pour fausseté ou hors-sujet" : "Uniquement Grattage - Note minimale de 0"}
 
     Directives d'évaluation :
-    1. Si la réponse de l'étudiant est parfaitement correcte, attribue ${maxPoints}.
-    2. Si la réponse est partiellement correcte ou incomplète, attribue une note décimale intermédiaire appropriée entre ${minScore} et ${maxPoints}.
-    3. Si la réponse est totalement erronée, hors-sujet ou invalide :
+    1. Base-toi rigoureusement sur les critères de correction fournis dans la Réponse attendue.
+    2. Si la réponse de l'étudiant satisfait aux critères, attribue ${maxPoints}.
+    3. Si la réponse est partiellement correcte, attribue une note décimale intermédiaire appropriée entre ${minScore} et ${maxPoints}.
+    4. Si la réponse est totalement erronée ou hors-sujet :
        - Dans un devoir mixte, attribue la note de pénalité minimale : ${minScore}.
        - Dans un devoir uniquement grattage, attribue la note minimale de 0.
-    4. Rédige un court feedback en français (2 phrases max), professionnel, expliquant de manière pédagogique le barème attribué à l'étudiant.
+    5. Rédige un court feedback en français (2 phrases max), professionnel, expliquant de manière pédagogique le barème attribué.
 
     IMPORTANT : Tu DOIS répondre UNIQUEMENT avec un objet JSON valide. 
     PAS de texte avant, PAS de texte après, PAS de balises markdown (comme \`\`\`json).
@@ -134,4 +135,59 @@ const gradeOpenQuestion = async (questionText, expectedAnswer, studentAnswer, ma
   }
 };
 
-module.exports = { generateQCM, gradeOpenQuestion };
+const generateGrattageExam = async (lessonContent, questionCount = 5) => {
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error("Clé API Gemini manquante dans le fichier .env");
+  }
+
+  const model = genAI.getGenerativeModel({ 
+    model: "gemini-2.5-flash"
+  });
+
+  const prompt = `
+    Tu es un Architecte Logiciel Senior et un Lead Developer Mentor.
+    À partir du contenu de la leçon suivant, génère un examen de type "grattage" (questions ouvertes où l'étudiant doit rédiger) de ${questionCount} questions.
+    
+    Pour chaque question, tu dois fournir le contexte, la question exacte, et la réponse attendue en te basant sur la méthodologie AFB.
+    La réponse attendue ("correctAnswer") DOIT OBLIGATOIREMENT être formatée en deux parties explicites :
+    "Critères de correction : [Tes critères de correction stricts pour guider l'IA évaluatrice]"
+    "Corrigé de l'Architecte : [La réponse parfaite attendue]"
+
+    IMPORTANT : Tu DOIS répondre UNIQUEMENT avec un objet JSON valide. 
+    PAS de texte avant, PAS de texte après, PAS de balises markdown (comme \`\`\`json).
+    Structure STRICTE :
+    {
+      "title": "Titre de l'examen pratique",
+      "description": "Brève description et contexte global du projet",
+      "questions": [
+        {
+          "text": "Contexte spécifique de la question... Question X : [La question posée]",
+          "correctAnswer": "Critères de correction : [Critères stricts, mots-clés attendus].\\nCorrigé de l'Architecte : [Réponse détaillée parfaite]."
+        }
+      ]
+    }
+
+    Contenu de la leçon :
+    ${lessonContent}
+  `;
+
+  const result = await model.generateContent(prompt);
+  const response = await result.response;
+  let text = response.text();
+  
+  // Nettoyer le texte pour isoler le JSON
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("L'IA n'a pas renvoyé un format JSON valide");
+  
+  let jsonString = jsonMatch[0];
+  jsonString = jsonString.replace(/,\s*([\]\}])/g, '$1');
+
+  try {
+    return JSON.parse(jsonString);
+  } catch (err) {
+    console.error("JSON Brut reçu:", text);
+    throw new Error("Erreur de formatage JSON de l'IA. Veuillez réessayer.");
+  }
+};
+
+module.exports = { generateQCM, gradeOpenQuestion, generateGrattageExam };
